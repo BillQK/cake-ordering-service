@@ -1,6 +1,6 @@
 'use strict'
 
-const uuidv1 = require('uuid/v1');
+const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
 const kinesis = new AWS.Kinesis();
@@ -10,7 +10,7 @@ const STREAM_NAME = process.env.orderStreamName
 
 module.exports.createOrder = body => {
     const order = {
-        orderId: uuidv1(),
+        orderId: uuidv4(), 
         name: body.name,
         address: body.address,
         productId: body.productId,
@@ -23,12 +23,23 @@ module.exports.createOrder = body => {
 }
 
 module.exports.placeNewOrder = order => {
-    return saveNewOrder(order).then(() => {
+    return saveOrder(order).then(() => {
         return placeOrderStream(order)
     })
 }
 
-function saveNewOrder(order) {
+module.exports.fulfillOrder = (orderId, fulfillmentId) => {
+
+    return getOrder(orderId).then(savedOrder => {
+        const order = createFulfilledOrder(savedOrder, fulfillmentId);
+        return saveOrder(order).then(() => {
+           return placeOrderStream(order) 
+        });
+    });
+}
+
+
+function saveOrder(order) {
     const params = {
         TableName: TABLE_NAME,
         Item: order
@@ -45,4 +56,25 @@ function placeOrderStream(order) {
     }
 
     return kinesis.putRecord(params).promise();
+}
+
+function getOrder(orderId) {
+    const params = {
+        Key: {
+            orderId: orderId
+        },
+        TableName: TABLE_NAME
+    };
+
+    return dynamo.get(params).promise().then(result => {
+        return result.Item;
+    })
+}
+
+function createFulfilledOrder(savedOrder, fulfillmentId) {
+    savedOrder.fulfillmentId = fulfillmentId;
+    savedOrder.fulfillmentDate = Date.now();
+    savedOrder.eventType = 'order_fulfilled';
+
+    return savedOrder;
 }
