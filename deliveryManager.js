@@ -10,18 +10,18 @@ const orderManager = require("./orderManager")
 const customerServiceManager = require("./customerServiceManager")
 
 module.exports.deliveryOrder = orderFulfilled => {
-    var orderFulfilledPromises = [] 
-
+    var orderFulfilledPromises = []; 
 
     for (let order of orderFulfilled) {
         const temp = orderManager.updateOrderForDelivery(order.orderId).then(
             updateOrder => {
-                return orderManager.saveOrder(updateOrder).then(() => {
-                   return notifyDeliveryCompany(updateOrder);
+                orderManager.saveOrder(updateOrder).then(() => {
+                    notifyDeliveryCompany(updateOrder);
                 });
             });
         orderFulfilledPromises.push(temp)
     };
+    return Promise.all(orderFulfilledPromises)
 }
 module.exports.orderDelivered = (orderId, deliveryCompanyId, orderReview) => {
     return orderManager.updateOrderForDelivery(orderId, deliveryCompanyId).then(

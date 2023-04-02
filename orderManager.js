@@ -41,7 +41,7 @@ module.exports.fulfillOrder = (orderId, fulfillmentId) => {
 module.exports.updateOrderForDelivery = orderId => {
     return getOrder(orderId).then(order => {
         order.sentToDeliveryDate = Date.now(); 
-        return order
+        return order;
     }); 
 }
 
@@ -59,7 +59,7 @@ module.exports.updateOrderForDelivery = (orderId, deliveryCompanyId) => {
     return getOrder(orderId).then(order => {
         order.deliveryCompanyId = deliveryCompanyId;
         order.deliveryDate = Date.now();
-        return order
+        return order;
     })
 }
 

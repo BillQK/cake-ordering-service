@@ -7,7 +7,7 @@ provider:
   runtime: nodejs12.x
   logs:
     restApi: true  # Enable API Gateway logs
-
+  lambdaHashingVersion: 20201221
   
   iamRoleStatements:
     - Effect: Allow
@@ -73,7 +73,7 @@ functions:
       region: ${aws:region}
       cakeProducerEmail: billdt2002@gmail.com
       orderingSystemEmail: billngo47@gmail.com
-      deliveryServiceQueue: 
+      deliveryCompanyQueue: 
         Ref: deliveryServiceQueue
       orderTableName: ordersTable
   notifyDeliveryCompany: 

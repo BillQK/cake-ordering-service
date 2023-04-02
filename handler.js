@@ -45,7 +45,7 @@ module.exports.notifyExternalParties = async (event) => {
 }
 
 module.exports.notifyDeliveryCompany = async (event) => {
-  console.log("Let's image that we call the company end points"); 
+  console.log('Let image that we call the company end points'); 
 
   return 'done';
 }
@@ -85,7 +85,7 @@ function getCakeProducerPromise(records) {
 };
 
 function getDeliveryPromise(records) {
-  const orderFulFilled = records.filter(r => r.eventType == 'order_fulfilled')
+  const orderFulFilled = records.filter(r => r.eventType == 'order_fulfilled');
 
   if (orderFulFilled.length > 0) {
     return deliveryManager.deliveryOrder(orderFulFilled);
