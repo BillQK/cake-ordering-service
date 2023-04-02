@@ -1,11 +1,14 @@
 org: kigo4710
 app: cake-ordering-system
-service: cake-ordering-system 
+service: cake-ordering-system
 
 provider:
   name: aws
   runtime: nodejs12.x
+  logs:
+    restApi: true  # Enable API Gateway logs
 
+  
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -18,6 +21,27 @@ provider:
         - kinesis:PutRecord
       Resource:
         - !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/order-events
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+      Resource: "*"
+      Condition:
+        StringEquals:
+          ses:FromAddress:
+            - billngo47@gmail.com
+
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "*"
+    - Effect: Allow 
+      Action: 
+        - sqs:SendMessage
+      Resource: 
+        - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:deliveryServiceQueue
+        - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:customerServiceQueue
 
 functions:
   createOrder:
@@ -29,15 +53,54 @@ functions:
     environment:
       orderTableName: ordersTable
       orderStreamName: order-events
-  orderFulfillment: 
+  orderFulfillment:
     handler: handler.orderFulfillment
     events:
-      - http: 
+      - http:
           path: /order/fulfill
           method: post
     environment:
       orderTableName: ordersTable
       orderStreamName: order-events
+  notifyExternalParties:
+    handler: handler.notifyExternalParties
+    events:
+      - stream:
+          type: kinesis
+          arn:
+            Fn::GetAtt: [orderEventsStream, Arn]
+    environment:
+      region: ${aws:region}
+      cakeProducerEmail: billdt2002@gmail.com
+      orderingSystemEmail: billngo47@gmail.com
+      deliveryServiceQueue: 
+        Ref: deliveryServiceQueue
+      orderTableName: ordersTable
+  notifyDeliveryCompany: 
+    handler: handler.notifyDeliveryCompany
+    events: 
+      - sqs: 
+          arn: 
+            Fn::GetAtt: [deliveryServiceQueue, Arn]
+          batchSize: 1 
+  orderDelivered: 
+    handler: handler.orderDelivered
+    events: 
+      - http: 
+          path: /order/delivered
+          method: post
+    environment: 
+      region: ${aws:region}
+      orderTableName: ordersTable
+      customerServiceQueue: 
+        Ref: customerServiceQueue
+  notifyCustomerService: 
+    handler: handler.notifyCustomerService
+    events: 
+      - sqs: 
+          arn: 
+            Fn::GetAtt: [customerServiceQueue, Arn]
+          batchSize: 1 
 
 resources:
   Resources:
@@ -57,3 +120,11 @@ resources:
           - AttributeName: "orderId"
             KeyType: "HASH"
         BillingMode: PAY_PER_REQUEST
+    deliveryServiceQueue: 
+      Type: AWS::SQS::Queue
+      Properties: 
+        QueueName: deliveryServiceQueue
+    customerServiceQueue: 
+      Type: AWS::SQS::Queue
+      Properties: 
+        QueueName: customerServiceQueue

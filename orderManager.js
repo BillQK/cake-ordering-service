@@ -23,7 +23,7 @@ module.exports.createOrder = body => {
 }
 
 module.exports.placeNewOrder = order => {
-    return saveOrder(order).then(() => {
+    return this.saveOrder(order).then(() => {
         return placeOrderStream(order)
     })
 }
@@ -32,20 +32,35 @@ module.exports.fulfillOrder = (orderId, fulfillmentId) => {
 
     return getOrder(orderId).then(savedOrder => {
         const order = createFulfilledOrder(savedOrder, fulfillmentId);
-        return saveOrder(order).then(() => {
+        return this.saveOrder(order).then(() => {
            return placeOrderStream(order) 
         });
     });
 }
 
+module.exports.updateOrderForDelivery = orderId => {
+    return getOrder(orderId).then(order => {
+        order.sentToDeliveryDate = Date.now(); 
+        return order
+    }); 
+}
 
-function saveOrder(order) {
+
+module.exports.saveOrder = order => {
     const params = {
         TableName: TABLE_NAME,
         Item: order
     }
 
     return dynamo.put(params).promise()
+}
+
+module.exports.updateOrderForDelivery = (orderId, deliveryCompanyId) => {
+    return getOrder(orderId).then(order => {
+        order.deliveryCompanyId = deliveryCompanyId;
+        order.deliveryDate = Date.now();
+        return order
+    })
 }
 
 function placeOrderStream(order) {
