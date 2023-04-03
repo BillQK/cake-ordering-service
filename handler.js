@@ -74,7 +74,7 @@ module.exports.notifyCustomerService = async (event) => {
 
 function getCakeProducerPromise(records) {
   
-  const orderPlaced = records.filter(r => r.eventType == 'order_placed')
+  const orderPlaced = records.filter(r => r.eventType == "order_placed")
 
   if (orderPlaced.length >  0) {
     return cakeProducerManager.handlePlacedOrders(orderPlaced);
@@ -88,6 +88,7 @@ function getDeliveryPromise(records) {
   const orderFulFilled = records.filter(r => r.eventType == 'order_fulfilled');
 
   if (orderFulFilled.length > 0) {
+    console.log("")
     return deliveryManager.deliveryOrder(orderFulFilled);
   } else {
     return null;

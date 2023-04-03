@@ -2,7 +2,6 @@
 
 function parsePayload(record) {
     const json = Buffer.from(record.kinesis.data, 'base64').toString('utf8');
-    console.log(json)
     return JSON.parse(json);
 }
 
