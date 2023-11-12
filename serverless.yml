@@ -4,11 +4,11 @@ service: cake-ordering-system
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs18.x
   logs:
-    restApi: true  # Enable API Gateway logs
+    restApi: true # Enable API Gateway logs
   lambdaHashingVersion: 20201221
-  
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -36,10 +36,10 @@ provider:
         - logs:CreateLogStream
         - logs:PutLogEvents
       Resource: "*"
-    - Effect: Allow 
-      Action: 
+    - Effect: Allow
+      Action:
         - sqs:SendMessage
-      Resource: 
+      Resource:
         - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:deliveryServiceQueue
         - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:customerServiceQueue
 
@@ -73,34 +73,34 @@ functions:
       region: ${aws:region}
       cakeProducerEmail: billdt2002@gmail.com
       orderingSystemEmail: billngo47@gmail.com
-      deliveryCompanyQueue: 
+      deliveryCompanyQueue:
         Ref: deliveryServiceQueue
       orderTableName: ordersTable
-  notifyDeliveryCompany: 
+  notifyDeliveryCompany:
     handler: handler.notifyDeliveryCompany
-    events: 
-      - sqs: 
-          arn: 
+    events:
+      - sqs:
+          arn:
             Fn::GetAtt: [deliveryServiceQueue, Arn]
-          batchSize: 1 
-  orderDelivered: 
+          batchSize: 1
+  orderDelivered:
     handler: handler.orderDelivered
-    events: 
-      - http: 
+    events:
+      - http:
           path: /order/delivered
           method: post
-    environment: 
+    environment:
       region: ${aws:region}
       orderTableName: ordersTable
-      customerServiceQueue: 
+      customerServiceQueue:
         Ref: customerServiceQueue
-  notifyCustomerService: 
+  notifyCustomerService:
     handler: handler.notifyCustomerService
-    events: 
-      - sqs: 
-          arn: 
+    events:
+      - sqs:
+          arn:
             Fn::GetAtt: [customerServiceQueue, Arn]
-          batchSize: 1 
+          batchSize: 1
 
 resources:
   Resources:
@@ -120,11 +120,11 @@ resources:
           - AttributeName: "orderId"
             KeyType: "HASH"
         BillingMode: PAY_PER_REQUEST
-    deliveryServiceQueue: 
+    deliveryServiceQueue:
       Type: AWS::SQS::Queue
-      Properties: 
+      Properties:
         QueueName: deliveryServiceQueue
-    customerServiceQueue: 
+    customerServiceQueue:
       Type: AWS::SQS::Queue
-      Properties: 
+      Properties:
         QueueName: customerServiceQueue
